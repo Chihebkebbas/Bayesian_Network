@@ -1,9 +1,10 @@
 # Imports
-from pgmpy.models import BayesianNetwork
+from pgmpy.models import BayesianNetwork, DiscreteBayesianNetwork
 from pgmpy.factors.discrete import TabularCPD
 from pgmpy.inference import VariableElimination
 from pgmpy.factors.discrete import State
 from pgmpy.sampling import BayesianModelSampling
+from sympy.strategies.core import switch
 
 
 # ---------Create nodes and conditional probabilityh distribution ------
@@ -18,8 +19,20 @@ def get_probs_gene_ancestor(varName):
     ----------
     varName : name of the variable (String)
     """
-    raise NotImplementedError
-    # TODO
+    if not isinstance(varName, str):
+        raise TypeError("The name of the variable must be a string")
+
+    probs_gene = TabularCPD (
+        variable=varName,
+        variable_card=3,
+        values=[ [0.01], # 2
+                 [0.03], # 1
+                 [0.96] # 0
+        ],
+        state_names={varName: ["2","1","0"]}
+    )
+    return probs_gene
+
     
 
 
@@ -33,8 +46,22 @@ def get_probs_trait(varName,evidenceName):
     varName : name of the traits variable (String)
     evidenceName: name of the evidence gene variable (String)
     """
-    raise NotImplementedError
-    # TODO
+    if not isinstance(varName, str) and not isinstance(evidenceName, str):
+        raise TypeError("The name of the variables must be a string")
+
+    probs_trait = t=TabularCPD (
+        variable= varName,
+        variable_card=2,
+        values=[[0.65, 0.56, 0.01], # oui
+                [0.35, 0.44, 0.99] # non
+        ],
+        evidence=[evidenceName],
+        evidence_card=[3],
+        state_names={varName: ["oui","non"],
+                     evidenceName: ["2","1","0"]}
+    )
+    return probs_trait
+
 
 
 # constant defining mutation probability of a gene
@@ -51,8 +78,15 @@ def get_probs_heredity1(geneParent):
     geneParent: number of genes (0, 1 or 2) of the
     parent (father or mother)
     """
-    raise NotImplementedError
-    # TODO
+    if geneParent == 0:
+        return prob_mutation
+    elif geneParent == 1:
+        return 0.5
+    elif geneParent == 2:
+        return 1 - prob_mutation
+
+    else:
+        raise ValueError("Invalid value for geneParent")
 
 
 
@@ -67,20 +101,21 @@ def get_probs_gene(varNameChild,evidenceNameFather,evidenceNameMother):
     varNameChild : name of the traits variable (String)
     evidenceName: name of the evidence gene variable (String)
     """
-    raise NotImplementedError
-    # TODO
+    if not isinstance(varNameChild, str) and not isinstance(evidenceNameFather, str) and not isinstance(evidenceNameMother, str):
+        raise TypeError("The name of the variables must be a string")
 
-#  +----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-#  | Gene_Father    |  2  |  2  |  2  |  1  |  1  |  0  |  0  |  0  |  0  |
-#  +----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-#  | Gene_Mother    |  2  |  1  |  0  |  2  |  1  |  0  |  2  |  1  |  0  |
-#  +----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-#  | Gene_Child=2   |                       ???                           |
-#  +----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+
+#  +----------------+-------+-----+-----+-----+-----+-----+-----+-----+-----+
+#  | Gene_Father    |   2   |  2  |  2  |  1  |  1  |  0  |  0  |  0  |  0  |
+#  +----------------+-------+-----+-----+-----+-----+-----+-----+-----+-----+
+#  | Gene_Mother    |   2   |  1  |  0  |  2  |  1  |  0  |  2  |  1  |  0  |
+#  +----------------+-------+-----+-----+-----+-----+-----+-----+-----+-----+
+#  | Gene_Child=2   |0.9801 |0.495|             ???                           |
+#  +----------------+-------+-----+-----+-----+-----+-----+-----+-----+-----+
 #  | Gene_Child=1   |                       ???                           |
-#  +----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+#  +----------------+-------+-----+-----+-----+-----+-----+-----+-----+-----+
 #  | Gene_Child=0   |                       ???                           |
-#  +----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+#  +----------------+-------+-----+-----+-----+-----+-----+-----+-----+-----+
 
 
 #--------------------Create a Bayesian Network for family n°1 --------------------------------
